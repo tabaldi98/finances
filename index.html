@@ -126,6 +126,8 @@ details.editor > summary { cursor: pointer; padding: 14px 16px; font-family: var
 .qa { display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; align-items: end; }
 .qa .field select { font: inherit; font-size: 0.9rem; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); }
 .msg { font-size: 0.85rem; color: var(--good); min-height: 1.2em; }
+.renda-in { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 0.85rem; width: 7.5em; text-align: right; padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); }
+.renda-in.extra { border-color: var(--accent); background: var(--accent-soft); font-weight: 500; }
 .badge { font-family: var(--mono); font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
 </style>
 </head>
@@ -228,7 +230,7 @@ details.editor > summary { cursor: pointer; padding: 14px 16px; font-family: var
   <section>
     <div class="head">
       <h2>Projeção mês a mês</h2>
-      <p class="note">Valores em reais. A sobra acumulada soma a sobra de cada mês desde o início da projeção.</p>
+      <p class="note">Valores em reais. <b>Clique na renda de qualquer mês para alterar só aquele mês.</b> Meses com renda diferente ficam destacados. Apagar o valor volta para a renda padrão. A sobra acumulada soma a sobra de cada mês desde o início.</p>
     </div>
     <div class="scroll"><table id="tabela"></table></div>
   </section>

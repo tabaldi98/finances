@@ -124,8 +124,8 @@ function renderPlano(){
 
   // tabela
   let h = `<thead><tr><th>Mês</th><th>Renda</th><th>Contas fixas</th><th>Parcelas</th><th>Gasto total</th><th>Sobra</th><th>Sobra acumulada</th></tr></thead><tbody>`;
-  for (const r of rows) h += `<tr><td class="txt">${lbl(r.m)}</td><td>${n2(r.renda)}${r.extra?" *":""}</td><td>${n2(FIXO)}</td><td>${n2(r.parc)}</td><td>${n2(FIXO+r.parc)}</td><td>${n2(r.sobra)}</td><td>${n2(r.acum)}</td></tr>`;
-  $("tabela").innerHTML = h + "</tbody>" + (rows.some(r=>r.extra) ? `<tfoot><tr><td class="txt note" colspan="7">* renda diferente informada para o mês</td></tr></tfoot>` : "");
+  for (const r of rows) h += `<tr><td class="txt">${lbl(r.m)}</td><td><input class="renda-in${r.extra?" extra":""}" type="number" step="0.01" min="0" data-rmt="${r.m}" value="${r.renda}" aria-label="Renda de ${lbl(r.m)}"></td><td>${n2(FIXO)}</td><td>${n2(r.parc)}</td><td>${n2(FIXO+r.parc)}</td><td${r.sobra<0?' style="color:var(--warn)"':""}>${n2(r.sobra)}</td><td${r.acum<0?' style="color:var(--warn)"':""}>${n2(r.acum)}</td></tr>`;
+  $("tabela").innerHTML = h + "</tbody>" + "";
 
   // marcos
   const liber = {};
@@ -161,6 +161,13 @@ document.addEventListener("input", e=>{
   else if (t.dataset.rm){ D.rendaMes[t.dataset.rm] = +t.value||0; mudou(); }
   else if (t.id==="inRenda"){ D.renda = +t.value||0; mudou(); }
   else if (t.id==="inInicio"){ if (t.value) { D.inicio = t.value; mudou(); } }
+});
+document.addEventListener("change", e=>{
+  const t = e.target;
+  if (!t.dataset.rmt) return;
+  const v = t.value === "" ? null : +t.value;
+  if (v === null || v === D.renda) delete D.rendaMes[t.dataset.rmt]; else D.rendaMes[t.dataset.rmt] = v;
+  renderEditor(); mudou();
 });
 document.addEventListener("click", e=>{
   const t = e.target;
