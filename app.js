@@ -142,7 +142,7 @@ function renderPlano(){
     const falta = M.filter(m=>ativa(p,m)).length * p.valor; saldo += falta;
     g += `<tr><td class="txt">${esc(p.item)}</td><td class="txt val" style="text-align:left">${esc(p.cartao)}</td><td class="val">${brl(+p.valor)}</td><td class="val">${lbl(p.fim)}</td><td class="val">${brl(falta)}</td>${cols.map(m=>`<td class="${ativa(p,m)?"on":""}${m===p.fim?" last":""}"></td>`).join("")}</tr>`;
   }
-  g += `<tr><td class="txt"><b>Total do mês</b></td><td></td><td></td><td></td><td></td>${cols.map(m=>`<td style="font-size:0.72rem">${brl(P.filter(p=>ativa(p,m)).reduce((s,p)=>s+(+p.valor),0))}</td>`).join("")}</tr></tbody>`;
+  g += `<tr><td class="txt"><b>Total do mês</b></td><td></td><td></td><td></td><td></td>${cols.map(m=>`<td>${brl(P.filter(p=>ativa(p,m)).reduce((s,p)=>s+(+p.valor),0))}</td>`).join("")}</tr></tbody>`;
   $("gantt").innerHTML = P.length ? g : `<tbody><tr><td class="txt">Nenhuma parcela cadastrada.</td></tr></tbody>`;
   $("saldoDev").textContent = brl(saldo);
 

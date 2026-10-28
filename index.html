@@ -28,7 +28,7 @@
   --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; color-scheme: dark; }
 
 body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.55; }
-.wrap { max-width: 960px; margin: 0 auto; padding-block: 40px 64px;
+.wrap { max-width: 1800px; margin: 0 auto; padding-block: 40px 64px;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
   display: grid; gap: 40px; }
 h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
@@ -89,9 +89,10 @@ tr.done td { color: var(--muted); }
 tbody tr:last-child td { border-bottom: 0; }
 .gantt td.on { background: color-mix(in srgb, var(--s2) 70%, transparent); }
 .gantt td.on.last { background: var(--s2); }
-.gantt td { text-align: center; min-width: 38px; padding: 6px 4px; border-left: 2px solid var(--surface); }
+.gantt td { text-align: center; min-width: 0; padding: 6px 4px; font-size: 0.68rem; border-left: 2px solid var(--surface); }
 .gantt td:first-child, .gantt td.val { text-align: left; border-left: 0; padding: 6px 10px; }
-.gantt td.val { text-align: right; }
+.gantt td.val { text-align: right; font-size: 0.85rem; }
+.gantt td.txt { font-size: 0.85rem; }
 
 .recs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px 32px; }
 @media (max-width: 760px) { .recs { grid-template-columns: 1fr; } }
