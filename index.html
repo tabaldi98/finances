@@ -133,6 +133,42 @@ details.editor > summary { cursor: pointer; padding: 14px 16px; font-family: var
 .sort { font: inherit; font-weight: 600; font-size: 0.78rem; color: var(--ink-2); background: none; border: 0; padding: 2px 0; cursor: pointer; white-space: nowrap; }
 .sort:hover, .sort.on { color: var(--accent); }
 .badge { font-family: var(--mono); font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+
+.qa .field select { width: 100%; box-sizing: border-box; }
+@media (max-width: 640px) {
+  .wrap { padding-block: 24px 48px; gap: 28px; }
+  #plan { gap: 28px !important; }
+  .chart { height: 240px; }
+  .scroll:has(> .rt) { overflow: visible; }
+  .rt, .rt tbody, .rt tr, .rt td { display: block; }
+  .rt thead { display: none; }
+  .rt tr { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; padding: 12px; border-bottom: 1px solid var(--line); position: relative; }
+  .rt tbody tr:last-child { border-bottom: 0; }
+  .rt td, .rt td:first-child { border: 0; padding: 0; text-align: left; white-space: normal; position: static; min-width: 0; font-size: 0.9rem; }
+  .rt td[data-label]::before { content: attr(data-label); display: block; font-family: var(--body); font-size: 0.72rem; color: var(--muted); margin-bottom: 2px; }
+  .rt td:first-child { grid-column: 1 / -1; font-weight: 600; font-family: var(--display); }
+  .rt td:first-child::before { display: none !important; }
+  .rt td.x { position: absolute; top: 6px; right: 6px; width: auto; }
+  .rt td.x::before { display: none !important; }
+  .ed-table.rt tr { padding: 12px 36px 12px 0; }
+  .ed-table.rt td:first-child { font-family: var(--body); font-weight: 400; }
+  .renda-in { width: 100%; box-sizing: border-box; text-align: left; font-size: 0.95rem; padding: 8px; }
+  #tabela td:nth-child(2) { grid-column: 1 / -1; }
+  /* quadro de parcelas: cartão com uma faixa de meses */
+  .gantt.rt thead { display: block; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+  .gantt.rt thead tr { display: flex; flex-wrap: wrap; gap: 6px; padding: 0; border: 0; }
+  .gantt.rt thead th { display: block; padding: 0; border: 0; position: static; background: none; }
+  .gantt.rt thead th.m { display: none; }
+  .gantt.rt thead th .sort { border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; }
+  .gantt.rt tbody tr { grid-template-columns: repeat(var(--n, 20), minmax(0, 1fr)); gap: 6px 2px; }
+  .gantt.rt td { grid-column: span var(--h, 10); font-size: 0.85rem; }
+  .gantt.rt td:first-child { grid-column: 1 / -1; }
+  .gantt.rt td.val { text-align: left; padding: 0; }
+  .gantt.rt td.m { grid-column: span 2; height: 10px; padding: 0; border: 0; border-radius: 2px; background: var(--line); }
+  .gantt.rt td.m.on { background: color-mix(in srgb, var(--s2) 70%, transparent); }
+  .gantt.rt td.m.last { background: var(--s2); }
+  .gantt.rt tr.tot { display: none; }
+}
 </style>
 </head>
 <body>
@@ -178,15 +214,15 @@ details.editor > summary { cursor: pointer; padding: 14px 16px; font-family: var
       <div>
         <h3>Renda diferente em meses específicos</h3>
         <p class="note">Use quando a renda de um mês foge do normal, como um bônus ou uma hora extra.</p>
-        <div class="scroll" style="border:0"><table class="ed-table" id="edRenda"></table></div>
+        <div class="scroll" style="border:0"><table class="ed-table rt" id="edRenda"></table></div>
       </div>
       <div>
         <h3>Contas fixas e assinaturas</h3>
-        <div class="scroll" style="border:0"><table class="ed-table" id="edFixos"></table></div>
+        <div class="scroll" style="border:0"><table class="ed-table rt" id="edFixos"></table></div>
       </div>
       <div>
         <h3>Parcelas</h3>
-        <div class="scroll" style="border:0"><table class="ed-table" id="edParc"></table></div>
+        <div class="scroll" style="border:0"><table class="ed-table rt" id="edParc"></table></div>
       </div>
     </div>
   </details>
@@ -223,7 +259,7 @@ details.editor > summary { cursor: pointer; padding: 14px 16px; font-family: var
       <h2>Quando cada parcela acaba</h2>
       <p class="note">Saldo ainda a pagar: <b class="num" id="saldoDev"></b>. O quadrado mais escuro é a última parcela. Clique no título de uma coluna para ordenar.</p>
     </div>
-    <div class="scroll"><table class="gantt" id="gantt"></table></div>
+    <div class="scroll"><table class="gantt rt" id="gantt"></table></div>
   </section>
 
   <section>
@@ -236,7 +272,7 @@ details.editor > summary { cursor: pointer; padding: 14px 16px; font-family: var
       <h2>Projeção mês a mês</h2>
       <p class="note">Valores em reais. <b>Clique na renda de qualquer mês para alterar só aquele mês.</b> Meses com renda diferente ficam destacados. Apagar o valor volta para a renda padrão. A sobra acumulada soma a sobra de cada mês desde o início.</p>
     </div>
-    <div class="scroll"><table id="tabela"></table></div>
+    <div class="scroll"><table id="tabela" class="rt"></table></div>
   </section>
   </div>
 </div>

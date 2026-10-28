@@ -18,6 +18,11 @@ function parseBRL(s){
 }
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const $ = id => document.getElementById(id);
+// Copia o título de cada coluna para as células, usado no layout de cartões do celular
+function rotular(t){
+  const th = [...t.querySelectorAll("thead th")].map(x=>x.textContent.replace(/[▲▼↕]/g,"").trim());
+  t.querySelectorAll("tbody tr").forEach(tr=>[...tr.cells].forEach((td,i)=>{ if (th[i] && !td.classList.contains("m")) td.dataset.label = th[i]; }));
+}
 
 const vazio = () => ({ renda: 0, inicio: proxMes(), rendaMes: {}, fixos: [], parcelas: [] });
 function exemplo(){
@@ -136,20 +141,23 @@ function renderPlano(){
 
   // gantt
   const cols = M.filter(m => !ultimoFim || m <= ultimoFim);
-  let g = `<thead><tr>${["item","cartao","valor","fim","total"].map(thOrd).join("")}${cols.map(m=>`<th style="text-align:center">${lbl(m)}</th>`).join("")}</tr></thead><tbody>`;
+  let g = `<thead><tr>${["item","cartao","valor","fim","total"].map(thOrd).join("")}${cols.map(m=>`<th class="m" style="text-align:center">${lbl(m)}</th>`).join("")}</tr></thead><tbody>`;
   let saldo = 0;
   for (const p of ordenar(P, M)){
     const falta = M.filter(m=>ativa(p,m)).length * p.valor; saldo += falta;
-    g += `<tr><td class="txt">${esc(p.item)}</td><td class="txt val" style="text-align:left">${esc(p.cartao)}</td><td class="val">${brl(+p.valor)}</td><td class="val">${lbl(p.fim)}</td><td class="val">${brl(falta)}</td>${cols.map(m=>`<td class="${ativa(p,m)?"on":""}${m===p.fim?" last":""}"></td>`).join("")}</tr>`;
+    g += `<tr><td class="txt">${esc(p.item)}</td><td class="txt val" style="text-align:left">${esc(p.cartao)}</td><td class="val">${brl(+p.valor)}</td><td class="val">${lbl(p.fim)}</td><td class="val">${brl(falta)}</td>${cols.map(m=>`<td class="m${ativa(p,m)?" on":""}${m===p.fim?" last":""}" title="${lbl(m)}"></td>`).join("")}</tr>`;
   }
-  g += `<tr><td class="txt"><b>Total do mês</b></td><td></td><td></td><td></td><td></td>${cols.map(m=>`<td>${brl(P.filter(p=>ativa(p,m)).reduce((s,p)=>s+(+p.valor),0))}</td>`).join("")}</tr></tbody>`;
+  g += `<tr class="tot"><td class="txt"><b>Total do mês</b></td><td></td><td></td><td></td><td></td>${cols.map(m=>`<td>${brl(P.filter(p=>ativa(p,m)).reduce((s,p)=>s+(+p.valor),0))}</td>`).join("")}</tr></tbody>`;
   $("gantt").innerHTML = P.length ? g : `<tbody><tr><td class="txt">Nenhuma parcela cadastrada.</td></tr></tbody>`;
+  $("gantt").style.setProperty("--n", cols.length*2); $("gantt").style.setProperty("--h", cols.length);
+  rotular($("gantt"));
   $("saldoDev").textContent = brl(saldo);
 
   // tabela
   let h = `<thead><tr><th>Mês</th><th>Renda</th><th>Contas fixas</th><th>Parcelas</th><th>Gasto total</th><th>Sobra</th><th>Sobra acumulada</th></tr></thead><tbody>`;
   for (const r of rows) h += `<tr><td class="txt">${lbl(r.m)}</td><td><input class="renda-in${r.extra?" extra":""}" type="text" inputmode="decimal" data-rmt="${r.m}" value="${brl(r.renda)}" aria-label="Renda de ${lbl(r.m)}"></td><td>${brl(FIXO)}</td><td>${brl(r.parc)}</td><td>${brl(FIXO+r.parc)}</td><td${r.sobra<0?' style="color:var(--warn)"':""}>${brl(r.sobra)}</td><td${r.acum<0?' style="color:var(--warn)"':""}>${brl(r.acum)}</td></tr>`;
-  $("tabela").innerHTML = h + "</tbody>" + "";
+  $("tabela").innerHTML = h + "</tbody>";
+  rotular($("tabela"));
 
   // marcos
   const liber = {};
@@ -175,6 +183,7 @@ function renderEditor(){
     D.fixos.map((f,i)=>`<tr><td><input data-l="fixos" data-i="${i}" data-k="nome" value="${esc(f.nome)}" aria-label="Descrição"></td><td><input class="money" type="text" inputmode="decimal" data-l="fixos" data-i="${i}" data-k="valor" value="${brl(+f.valor)}" aria-label="Valor"></td><td class="x"><button type="button" data-del="fixos" data-i="${i}" aria-label="Remover">×</button></td></tr>`).join("") + `</tbody>`;
   $("edParc").innerHTML = `<thead><tr><th>Item</th><th>Cartão</th><th>Parcela (R$)</th><th>Primeira</th><th>Última</th><th></th></tr></thead><tbody>` +
     D.parcelas.map((p,i)=>`<tr><td><input data-l="parcelas" data-i="${i}" data-k="item" value="${esc(p.item)}" aria-label="Item"></td><td><input data-l="parcelas" data-i="${i}" data-k="cartao" value="${esc(p.cartao)}" aria-label="Cartão"></td><td><input class="money" type="text" inputmode="decimal" data-l="parcelas" data-i="${i}" data-k="valor" value="${brl(+p.valor)}" aria-label="Valor da parcela"></td><td><input type="month" data-l="parcelas" data-i="${i}" data-k="ini" value="${esc(p.ini)}" aria-label="Mês da primeira parcela"></td><td><input type="month" data-l="parcelas" data-i="${i}" data-k="fim" value="${esc(p.fim)}" aria-label="Mês da última parcela"></td><td class="x"><button type="button" data-del="parcelas" data-i="${i}" aria-label="Remover">×</button></td></tr>`).join("") + `</tbody>`;
+  ["edRenda","edFixos","edParc"].forEach(id=>rotular($(id)));
 }
 
 function mudou(){ delete D.exemplo; temDados = true; salvar(); renderPlano(); }
