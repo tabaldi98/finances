@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Plano Financeiro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: coluna única de leitura (~960px), resumo no topo, depois gráficos, metas, alocação e tabela mês a mês */
+:root {
+  --bg: #f6f8f8; --surface: #ffffff; --ink: #14201f; --ink-2: #4b5a59; --muted: #7d8b8a;
+  --line: #dde5e4; --accent: #0f6b62; --accent-soft: #e2f1ee;
+  --good: #1a7f37; --warn: #b26a00;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100;
+  --display: "Sora", "Segoe UI", system-ui, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1514; --surface: #172020; --ink: #e8efee; --ink-2: #b2c0bf; --muted: #84928f;
+  --line: #2a3634; --accent: #4cc1b2; --accent-soft: #19302d; --good: #4ac26b; --warn: #e0a03a;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0f1514; --surface: #172020; --ink: #e8efee; --ink-2: #b2c0bf; --muted: #84928f;
+  --line: #2a3634; --accent: #4cc1b2; --accent-soft: #19302d; --good: #4ac26b; --warn: #e0a03a;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; color-scheme: dark; }
+
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 960px; margin: 0 auto; padding-block: 40px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 40px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(1.7rem, 4vw, 2.4rem); font-weight: 700; }
+h2 { font-size: 1.3rem; font-weight: 600; }
+h3 { font-size: 1rem; font-weight: 600; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.lede { color: var(--ink-2); font-size: 1.05rem; }
+section { display: grid; gap: 16px; min-width: 0; }
+.head { display: grid; gap: 6px; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.note { font-size: 0.85rem; color: var(--muted); }
+
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.kpi { background: var(--surface); padding: 16px; display: grid; gap: 4px; align-content: start; min-width: 0; }
+.kpi .label { font-size: 0.8rem; color: var(--ink-2); }
+.kpi .value { font-family: var(--mono); font-size: 1.35rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+.kpi .sub { font-size: 0.78rem; color: var(--muted); }
+@media (max-width: 720px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+
+.controls { display: flex; flex-wrap: wrap; gap: 16px 32px; padding: 16px; background: var(--accent-soft); border-radius: 10px; }
+.ctrl { display: grid; gap: 6px; min-width: 220px; flex: 1; }
+.ctrl label { font-size: 0.85rem; font-weight: 500; display: flex; justify-content: space-between; gap: 8px; }
+.ctrl input[type=range] { width: 100%; accent-color: var(--accent); }
+.seg { display: flex; gap: 6px; }
+.seg button { flex: 1; font: inherit; font-size: 0.85rem; padding: 6px 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 6px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.chart-box { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 10px; min-width: 0; }
+.chart { position: relative; height: 300px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.82rem; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+.phases { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 760px) { .phases { grid-template-columns: 1fr; } }
+.phase { border-top: 3px solid var(--accent); padding-top: 12px; display: grid; gap: 8px; align-content: start; }
+.phase .when { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); }
+.split { display: grid; gap: 4px; font-size: 0.88rem; }
+.split div { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px dashed var(--line); padding-block: 3px; }
+
+.milestones { display: grid; gap: 0; border-left: 2px solid var(--line); margin-left: 6px; }
+.ms { position: relative; padding: 0 0 16px 20px; display: grid; gap: 2px; }
+.ms::before { content: ""; position: absolute; left: -7px; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: var(--surface); border: 2px solid var(--accent); }
+.ms.goal::before { background: var(--accent); }
+.ms .when { font-family: var(--mono); font-size: 0.8rem; color: var(--accent); }
+
+.scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
+th, td { padding: 8px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+th { font-weight: 600; color: var(--ink-2); font-size: 0.78rem; background: var(--surface); }
+td:first-child, th:first-child { text-align: left; position: sticky; left: 0; background: var(--surface); }
+td { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+td.txt { font-family: var(--body); }
+tr.done td { color: var(--muted); }
+tbody tr:last-child td { border-bottom: 0; }
+.gantt td.on { background: color-mix(in srgb, var(--s2) 70%, transparent); }
+.gantt td.on.last { background: var(--s2); }
+.gantt td { text-align: center; min-width: 38px; padding: 6px 4px; border-left: 2px solid var(--surface); }
+.gantt td:first-child, .gantt td.val { text-align: left; border-left: 0; padding: 6px 10px; }
+.gantt td.val { text-align: right; }
+
+.recs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px 32px; }
+@media (max-width: 760px) { .recs { grid-template-columns: 1fr; } }
+.rec { display: grid; gap: 4px; align-content: start; }
+.rec p { color: var(--ink-2); font-size: 0.92rem; }
+.callout { border: 1px solid var(--warn); border-radius: 10px; padding: 14px 16px; display: grid; gap: 4px; }
+.callout strong { color: var(--warn); }
+[hidden]{display:none!important}
+</style>
+<style>
+html { color-scheme: light; }
+body { margin: 0; }
+.privacy { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; padding: 12px 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); font-size: 0.88rem; color: var(--ink-2); }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn { font: inherit; font-size: 0.85rem; padding: 7px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.btn.danger { color: var(--warn); border-color: var(--warn); }
+.btn:hover { border-color: var(--accent); }
+details.editor { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+details.editor > summary { cursor: pointer; padding: 14px 16px; font-family: var(--display); font-weight: 600; }
+.ed-body { padding: 0 16px 16px; display: grid; gap: 20px; }
+.ed-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.field { display: grid; gap: 4px; font-size: 0.82rem; color: var(--ink-2); }
+.field input, .ed-table input { font: inherit; font-size: 0.9rem; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); min-width: 0; width: 100%; box-sizing: border-box; }
+.ed-table { width: 100%; }
+.ed-table th, .ed-table td { padding: 4px; text-align: left; border: 0; white-space: normal; font-family: var(--body); }
+.ed-table td:first-child, .ed-table th:first-child { position: static; }
+.ed-table td.x { width: 32px; }
+.ed-table button { font: inherit; border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 1.1rem; }
+.empty { text-align: center; padding: 48px 16px; border: 1px dashed var(--line); border-radius: 10px; display: grid; gap: 12px; justify-items: center; }
+.empty p { color: var(--ink-2); }
+.badge { font-family: var(--mono); font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="head">
+    <span class="eyebrow" id="eyebrow">Planejamento financeiro</span>
+    <h1>Plano financeiro: das parcelas à liberdade</h1>
+    <p class="lede" id="lede">Informe sua renda, os gastos fixos e as parcelas dos cartões. A página projeta a sobra mês a mês, monta a reserva de emergência e divide o restante entre investimentos, metas e lazer.</p>
+  </header>
+
+  <div class="privacy">
+    <span><span class="badge">Privado</span> Seus valores ficam só neste navegador. Nada é enviado nem fica salvo no site.</span>
+    <div class="btns">
+      <button class="btn" type="button" id="btnExport">Exportar dados</button>
+      <label class="btn" for="fileImport">Importar dados</label>
+      <input type="file" id="fileImport" accept="application/json,.json" hidden>
+      <button class="btn danger" type="button" id="btnClear">Apagar dados</button>
+    </div>
+  </div>
+
+  <details class="editor" id="editor">
+    <summary>Editar meus dados</summary>
+    <div class="ed-body">
+      <div class="ed-grid">
+        <label class="field">Renda líquida mensal (R$)<input type="number" step="0.01" min="0" id="inRenda"></label>
+        <label class="field">Primeiro mês da projeção<input type="month" id="inInicio"></label>
+        <label class="field">Rendimento líquido ao mês (%)<input type="number" step="0.05" min="0" id="inRent"></label>
+      </div>
+      <div>
+        <h3>Gastos fixos e assinaturas</h3>
+        <div class="scroll" style="border:0"><table class="ed-table" id="edFixos"></table></div>
+        <button class="btn" type="button" id="addFixo">+ Adicionar gasto fixo</button>
+      </div>
+      <div>
+        <h3>Parcelas dos cartões</h3>
+        <p class="note">Valor de cada parcela e o mês da última cobrança.</p>
+        <div class="scroll" style="border:0"><table class="ed-table" id="edParc"></table></div>
+        <button class="btn" type="button" id="addParc">+ Adicionar parcela</button>
+      </div>
+    </div>
+  </details>
+
+  <div class="empty" id="empty" hidden>
+    <h2>Comece pelos seus números</h2>
+    <p>Abra "Editar meus dados" e preencha renda, gastos fixos e parcelas, ou importe o arquivo que você exportou antes.</p>
+    <div class="btns">
+      <button class="btn primary" type="button" id="btnStart">Preencher meus dados</button>
+      <button class="btn" type="button" id="btnExample">Ver com valores de exemplo</button>
+    </div>
+  </div>
+
+  <div id="plan" hidden style="display:grid;gap:40px">
+  <div class="callout">
+    <strong>O que este plano assume</strong>
+    <p class="note" style="color:var(--ink-2)">A renda é líquida. Cada parcela é cobrada todo mês até o mês da última parcela, inclusive. Mercado, combustível, saúde e lazer entram como <b>dia a dia</b>, que você ajusta abaixo. Tudo na página se recalcula.</p>
+  </div>
+
+  <div class="controls">
+    <div class="ctrl">
+      <label for="dia">Gastos do dia a dia (mercado, transporte, saúde, lazer) <span class="num" id="diaOut"></span></label>
+      <input type="range" id="dia" min="0" max="10000" step="250" value="3000">
+    </div>
+    <div class="ctrl">
+      <label>Tamanho da reserva de emergência</label>
+      <div class="seg" id="mesesSeg">
+        <button type="button" data-m="3" aria-pressed="false">3 meses</button>
+        <button type="button" data-m="6" aria-pressed="true">6 meses</button>
+        <button type="button" data-m="12" aria-pressed="false">12 meses</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <section>
+    <div class="head">
+      <h2>Para onde vai cada real, mês a mês</h2>
+      <p class="note">A barra soma sempre a renda. A parte amarela é a sobra, que cresce conforme as parcelas acabam.</p>
+    </div>
+    <div class="chart-box">
+      <div class="legend">
+        <span><i style="background:var(--s1)"></i>Fixos e assinaturas</span>
+        <span><i style="background:var(--s2)"></i>Parcelas dos cartões</span>
+        <span><i style="background:var(--s3)"></i>Dia a dia (estimado)</span>
+        <span><i style="background:var(--s4)"></i>Sobra</span>
+      </div>
+      <div class="chart"><canvas id="cFluxo" aria-label="Gráfico de barras empilhadas com fixos, parcelas, dia a dia e sobra por mês"></canvas></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="head">
+      <h2>Quando cada parcela acaba</h2>
+      <p class="note">Saldo ainda a pagar: <b class="num" id="saldoDev"></b>. O quadrado mais escuro é a última parcela.</p>
+    </div>
+    <div class="scroll"><table class="gantt" id="gantt"></table></div>
+  </section>
+
+  <section>
+    <div class="head">
+      <h2>Como dividir a sobra</h2>
+      <p class="note">Uma regra simples por fase. A reserva vem primeiro, porque é ela que impede um imprevisto de virar dívida no cartão.</p>
+    </div>
+    <div class="phases">
+      <div class="phase">
+        <span class="when" id="f1when"></span>
+        <h3>1. Reserva de emergência</h3>
+        <div class="split"><div><span>Reserva</span><b>85%</b></div><div><span>Livre / lazer</span><b>15%</b></div></div>
+        <p class="note">Meta: <b class="num" id="metaRes"></b>, ou seja, <span id="metaResTxt"></span> do custo essencial (fixos + dia a dia, sem parcelas). Onde guardar: Tesouro Selic, CDB de liquidez diária com 100% do CDI ou mais, ou conta remunerada, separada da conta corrente.</p>
+      </div>
+      <div class="phase">
+        <span class="when" id="f2when"></span>
+        <h3>2. Investir para o longo prazo</h3>
+        <div class="split"><div><span>Investimentos</span><b>65%</b></div><div><span>Metas de médio prazo</span><b>20%</b></div><div><span>Livre / lazer</span><b>15%</b></div></div>
+        <p class="note">Aporte automático no dia do salário. Uma base de Tesouro IPCA+ (protege da inflação), mais uma parte em ETFs diversificados ou previdência PGBL, se você declara IR no modelo completo.</p>
+      </div>
+      <div class="phase">
+        <span class="when">Em paralelo, a partir da fase 2</span>
+        <h3>3. Metas de médio prazo</h3>
+        <div class="split"><div><span>Caixa de metas</span><b id="metaMes"></b></div></div>
+        <p class="note">Dinheiro com destino em 1 a 5 anos: trocar de carro, viajar à vista, ou amortizar a casa se a parcela for de financiamento. Amortizar reduzindo o prazo costuma economizar muitos juros. Guarde em CDB ou LCI com vencimento perto da data da meta.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="head">
+      <h2>Patrimônio acumulado</h2>
+      <p class="note" id="patNote"></p>
+    </div>
+    <div class="chart-box">
+      <div class="legend">
+        <span><i style="background:var(--s1)"></i>Reserva de emergência</span>
+        <span><i style="background:var(--s2)"></i>Investimentos de longo prazo</span>
+        <span><i style="background:var(--s3)"></i>Caixa de metas</span>
+      </div>
+      <div class="chart"><canvas id="cPat" aria-label="Gráfico de barras empilhadas do patrimônio acumulado por mês"></canvas></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="head"><h2>Marcos no caminho</h2></div>
+    <div class="milestones" id="marcos"></div>
+  </section>
+
+  <section>
+    <div class="head">
+      <h2>Projeção mês a mês</h2>
+      <p class="note">Valores em reais. "Livre" é o dinheiro para usar sem culpa.</p>
+    </div>
+    <div class="scroll"><table id="tabela"></table></div>
+  </section>
+
+  <section>
+    <div class="head"><h2>Hábitos que fazem o plano funcionar</h2></div>
+    <div class="recs">
+      <div class="rec"><h3>Medir o dia a dia por dois meses</h3><p>O maior ponto cego do plano é o gasto com mercado, combustível e lazer. Anote tudo por dois meses e ajuste o controle acima com o número real.</p></div>
+      <div class="rec"><h3>Nenhuma parcela nova até quitar tudo</h3><p>Cada parcela nova empurra a reserva para mais longe. Se precisar comprar algo, junte antes e pague à vista, pedindo desconto.</p></div>
+      <div class="rec"><h3>Redirecionar cada parcela que acaba</h3><p id="recRedir">Quando uma parcela termina, o valor liberado vai direto para a reserva, sem passar pelo consumo.</p></div>
+      <div class="rec"><h3>Ficar com um ou dois cartões</h3><p>Conforme os cartões zerarem, cancele os que cobram anuidade ou que você não usa. Menos faturas, menos esquecimentos.</p></div>
+      <div class="rec"><h3>Não adiantar parcelas sem juros</h3><p>Se as compras são sem juros, pagar antes não economiza nada. O dinheiro rende mais na reserva. Só antecipe se a loja der desconto real.</p></div>
+      <div class="rec"><h3>Revisão mensal de 15 minutos</h3><p>Todo começo de mês, compare o planejado com o real e faça os aportes. Revise as metas a cada seis meses ou quando a renda mudar.</p></div>
+    </div>
+  </section>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

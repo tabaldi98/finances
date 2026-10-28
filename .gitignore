@@ -1,0 +1,3 @@
+# Dados financeiros pessoais nunca entram no repositório
+*.json
+privado/
