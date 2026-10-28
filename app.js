@@ -9,7 +9,13 @@ const okM = k => /^\d{4}-\d{2}$/.test(k||"");
 const lbl = k => NOMES[+k.slice(5)-1]+"/"+k.slice(2,4);
 const brl = v => v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 const brl0 = v => v.toLocaleString("pt-BR",{style:"currency",currency:"BRL",maximumFractionDigits:0});
-const n2 = v => v.toLocaleString("pt-BR",{maximumFractionDigits:0});
+function parseBRL(s){
+  s = String(s ?? "").replace(/R\$|\s/g, "");
+  if (!s) return 0;
+  if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
+  else if (!/^\d+\.\d{1,2}$/.test(s)) s = s.replace(/\./g, "");
+  const v = parseFloat(s); return isFinite(v) ? v : 0;
+}
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const $ = id => document.getElementById(id);
 
@@ -65,6 +71,24 @@ function simular(){
 
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 let ch1;
+const SORT_KEY = "plano-financeiro:ordem";
+let ordem = { col: "fim", dir: "desc" };
+try { const s = JSON.parse(localStorage.getItem(SORT_KEY) || "null"); if (s && s.col) ordem = s; } catch(e){}
+const COLS_ORD = { item: "Item", cartao: "Cartão", valor: "Valor/mês", ini: "Primeira", fim: "Última", total: "Falta pagar" };
+function ordenar(P, M){
+  const falta = p => M.filter(m=>ativa(p,m)).length * p.valor;
+  const val = (p, c) => c==="valor" ? +p.valor : c==="total" ? falta(p) : c==="ini" ? (okM(p.ini)?p.ini:"") : String(p[c]||"").toLocaleLowerCase("pt-BR");
+  const d = ordem.dir === "asc" ? 1 : -1;
+  return [...P].sort((a,b)=>{
+    const x = val(a,ordem.col), y = val(b,ordem.col);
+    const r = typeof x === "number" ? x - y : x.localeCompare(y, "pt-BR");
+    return r !== 0 ? r*d : (a.fim<b.fim?1:a.fim>b.fim?-1:b.valor-a.valor);
+  });
+}
+const thOrd = c => {
+  const on = ordem.col === c;
+  return `<th aria-sort="${on?(ordem.dir==="asc"?"ascending":"descending"):"none"}"><button type="button" class="sort${on?" on":""}" data-sort="${c}">${COLS_ORD[c]}<span aria-hidden="true">${on?(ordem.dir==="asc"?" ▲":" ▼"):" ↕"}</span></button></th>`;
+};
 function chartOpts(){
   const ink2=css("--ink-2"), line=css("--line");
   return { responsive:true, maintainAspectRatio:false, animation:false,
@@ -112,19 +136,19 @@ function renderPlano(){
 
   // gantt
   const cols = M.filter(m => !ultimoFim || m <= ultimoFim);
-  let g = `<thead><tr><th>Item</th><th>Cartão</th><th>Valor/mês</th>${cols.map(m=>`<th style="text-align:center">${lbl(m)}</th>`).join("")}</tr></thead><tbody>`;
+  let g = `<thead><tr>${["item","cartao","valor","fim","total"].map(thOrd).join("")}${cols.map(m=>`<th style="text-align:center">${lbl(m)}</th>`).join("")}</tr></thead><tbody>`;
   let saldo = 0;
-  for (const p of [...P].sort((a,b)=>a.fim<b.fim?1:a.fim>b.fim?-1:b.valor-a.valor)){
-    saldo += M.filter(m=>ativa(p,m)).length * p.valor;
-    g += `<tr><td class="txt">${esc(p.item)}</td><td class="txt val" style="text-align:left">${esc(p.cartao)}</td><td class="val">${brl(+p.valor)}</td>${cols.map(m=>`<td class="${ativa(p,m)?"on":""}${m===p.fim?" last":""}"></td>`).join("")}</tr>`;
+  for (const p of ordenar(P, M)){
+    const falta = M.filter(m=>ativa(p,m)).length * p.valor; saldo += falta;
+    g += `<tr><td class="txt">${esc(p.item)}</td><td class="txt val" style="text-align:left">${esc(p.cartao)}</td><td class="val">${brl(+p.valor)}</td><td class="val">${lbl(p.fim)}</td><td class="val">${brl(falta)}</td>${cols.map(m=>`<td class="${ativa(p,m)?"on":""}${m===p.fim?" last":""}"></td>`).join("")}</tr>`;
   }
-  g += `<tr><td class="txt"><b>Total do mês</b></td><td></td><td></td>${cols.map(m=>`<td style="font-size:0.72rem">${n2(P.filter(p=>ativa(p,m)).reduce((s,p)=>s+(+p.valor),0))}</td>`).join("")}</tr></tbody>`;
+  g += `<tr><td class="txt"><b>Total do mês</b></td><td></td><td></td><td></td><td></td>${cols.map(m=>`<td style="font-size:0.72rem">${brl(P.filter(p=>ativa(p,m)).reduce((s,p)=>s+(+p.valor),0))}</td>`).join("")}</tr></tbody>`;
   $("gantt").innerHTML = P.length ? g : `<tbody><tr><td class="txt">Nenhuma parcela cadastrada.</td></tr></tbody>`;
   $("saldoDev").textContent = brl(saldo);
 
   // tabela
   let h = `<thead><tr><th>Mês</th><th>Renda</th><th>Contas fixas</th><th>Parcelas</th><th>Gasto total</th><th>Sobra</th><th>Sobra acumulada</th></tr></thead><tbody>`;
-  for (const r of rows) h += `<tr><td class="txt">${lbl(r.m)}</td><td><input class="renda-in${r.extra?" extra":""}" type="number" step="0.01" min="0" data-rmt="${r.m}" value="${r.renda}" aria-label="Renda de ${lbl(r.m)}"></td><td>${n2(FIXO)}</td><td>${n2(r.parc)}</td><td>${n2(FIXO+r.parc)}</td><td${r.sobra<0?' style="color:var(--warn)"':""}>${n2(r.sobra)}</td><td${r.acum<0?' style="color:var(--warn)"':""}>${n2(r.acum)}</td></tr>`;
+  for (const r of rows) h += `<tr><td class="txt">${lbl(r.m)}</td><td><input class="renda-in${r.extra?" extra":""}" type="text" inputmode="decimal" data-rmt="${r.m}" value="${brl(r.renda)}" aria-label="Renda de ${lbl(r.m)}"></td><td>${brl(FIXO)}</td><td>${brl(r.parc)}</td><td>${brl(FIXO+r.parc)}</td><td${r.sobra<0?' style="color:var(--warn)"':""}>${brl(r.sobra)}</td><td${r.acum<0?' style="color:var(--warn)"':""}>${brl(r.acum)}</td></tr>`;
   $("tabela").innerHTML = h + "</tbody>" + "";
 
   // marcos
@@ -141,36 +165,48 @@ function renderPlano(){
 
 // editor completo
 function renderEditor(){
-  $("inRenda").value = D.renda || "";
+  $("inRenda").value = D.renda ? brl(D.renda) : "";
   $("inInicio").value = D.inicio;
   const rm = Object.keys(D.rendaMes).sort();
   $("edRenda").innerHTML = rm.length
-    ? `<thead><tr><th>Mês</th><th>Renda (R$)</th><th></th></tr></thead><tbody>` + rm.map(m=>`<tr><td>${lbl(m)}</td><td><input type="number" step="0.01" data-rm="${m}" value="${D.rendaMes[m]}" aria-label="Renda de ${lbl(m)}"></td><td class="x"><button type="button" data-delrm="${m}" aria-label="Remover">×</button></td></tr>`).join("") + `</tbody>`
+    ? `<thead><tr><th>Mês</th><th>Renda (R$)</th><th></th></tr></thead><tbody>` + rm.map(m=>`<tr><td>${lbl(m)}</td><td><input class="money" type="text" inputmode="decimal" data-rm="${m}" value="${brl(+D.rendaMes[m])}" aria-label="Renda de ${lbl(m)}"></td><td class="x"><button type="button" data-delrm="${m}" aria-label="Remover">×</button></td></tr>`).join("") + `</tbody>`
     : `<tbody><tr><td class="note">Nenhum mês com renda diferente. Adicione em "Adicionar conta" escolhendo "Renda diferente em um mês".</td></tr></tbody>`;
   $("edFixos").innerHTML = `<thead><tr><th>Descrição</th><th>Valor (R$)</th><th></th></tr></thead><tbody>` +
-    D.fixos.map((f,i)=>`<tr><td><input data-l="fixos" data-i="${i}" data-k="nome" value="${esc(f.nome)}" aria-label="Descrição"></td><td><input type="number" step="0.01" data-l="fixos" data-i="${i}" data-k="valor" value="${f.valor}" aria-label="Valor"></td><td class="x"><button type="button" data-del="fixos" data-i="${i}" aria-label="Remover">×</button></td></tr>`).join("") + `</tbody>`;
+    D.fixos.map((f,i)=>`<tr><td><input data-l="fixos" data-i="${i}" data-k="nome" value="${esc(f.nome)}" aria-label="Descrição"></td><td><input class="money" type="text" inputmode="decimal" data-l="fixos" data-i="${i}" data-k="valor" value="${brl(+f.valor)}" aria-label="Valor"></td><td class="x"><button type="button" data-del="fixos" data-i="${i}" aria-label="Remover">×</button></td></tr>`).join("") + `</tbody>`;
   $("edParc").innerHTML = `<thead><tr><th>Item</th><th>Cartão</th><th>Parcela (R$)</th><th>Primeira</th><th>Última</th><th></th></tr></thead><tbody>` +
-    D.parcelas.map((p,i)=>`<tr><td><input data-l="parcelas" data-i="${i}" data-k="item" value="${esc(p.item)}" aria-label="Item"></td><td><input data-l="parcelas" data-i="${i}" data-k="cartao" value="${esc(p.cartao)}" aria-label="Cartão"></td><td><input type="number" step="0.01" data-l="parcelas" data-i="${i}" data-k="valor" value="${p.valor}" aria-label="Valor da parcela"></td><td><input type="month" data-l="parcelas" data-i="${i}" data-k="ini" value="${esc(p.ini)}" aria-label="Mês da primeira parcela"></td><td><input type="month" data-l="parcelas" data-i="${i}" data-k="fim" value="${esc(p.fim)}" aria-label="Mês da última parcela"></td><td class="x"><button type="button" data-del="parcelas" data-i="${i}" aria-label="Remover">×</button></td></tr>`).join("") + `</tbody>`;
+    D.parcelas.map((p,i)=>`<tr><td><input data-l="parcelas" data-i="${i}" data-k="item" value="${esc(p.item)}" aria-label="Item"></td><td><input data-l="parcelas" data-i="${i}" data-k="cartao" value="${esc(p.cartao)}" aria-label="Cartão"></td><td><input class="money" type="text" inputmode="decimal" data-l="parcelas" data-i="${i}" data-k="valor" value="${brl(+p.valor)}" aria-label="Valor da parcela"></td><td><input type="month" data-l="parcelas" data-i="${i}" data-k="ini" value="${esc(p.ini)}" aria-label="Mês da primeira parcela"></td><td><input type="month" data-l="parcelas" data-i="${i}" data-k="fim" value="${esc(p.fim)}" aria-label="Mês da última parcela"></td><td class="x"><button type="button" data-del="parcelas" data-i="${i}" aria-label="Remover">×</button></td></tr>`).join("") + `</tbody>`;
 }
 
 function mudou(){ delete D.exemplo; temDados = true; salvar(); renderPlano(); }
 
 document.addEventListener("input", e=>{
   const t = e.target;
-  if (t.dataset.l){ D[t.dataset.l][+t.dataset.i][t.dataset.k] = t.type==="number" ? (+t.value||0) : t.value; mudou(); }
-  else if (t.dataset.rm){ D.rendaMes[t.dataset.rm] = +t.value||0; mudou(); }
-  else if (t.id==="inRenda"){ D.renda = +t.value||0; mudou(); }
+  if (t.dataset.l){ D[t.dataset.l][+t.dataset.i][t.dataset.k] = t.classList.contains("money") ? parseBRL(t.value) : t.value; mudou(); }
+  else if (t.dataset.rm){ D.rendaMes[t.dataset.rm] = parseBRL(t.value); mudou(); }
+  else if (t.id==="inRenda"){ D.renda = parseBRL(t.value); mudou(); }
   else if (t.id==="inInicio"){ if (t.value) { D.inicio = t.value; mudou(); } }
+});
+document.addEventListener("focusin", e=>{ if (e.target.matches(".money, .renda-in")) e.target.select(); });
+document.addEventListener("focusout", e=>{
+  const t = e.target;
+  if (t.matches(".money") && t.value.trim() !== "") t.value = brl(parseBRL(t.value));
 });
 document.addEventListener("change", e=>{
   const t = e.target;
   if (!t.dataset.rmt) return;
-  const v = t.value === "" ? null : +t.value;
+  const v = t.value.trim() === "" ? null : parseBRL(t.value);
   if (v === null || v === D.renda) delete D.rendaMes[t.dataset.rmt]; else D.rendaMes[t.dataset.rmt] = v;
   renderEditor(); mudou();
 });
 document.addEventListener("click", e=>{
   const t = e.target;
+  const s = t.closest("[data-sort]");
+  if (s){
+    const c = s.dataset.sort;
+    ordem = ordem.col === c ? {col:c, dir: ordem.dir==="asc"?"desc":"asc"} : {col:c, dir: (c==="item"||c==="cartao"||c==="fim") ? "asc" : "desc"};
+    try { localStorage.setItem(SORT_KEY, JSON.stringify(ordem)); } catch(err){}
+    renderPlano(); return;
+  }
   if (t.dataset.del){ D[t.dataset.del].splice(+t.dataset.i,1); renderEditor(); mudou(); }
   if (t.dataset.delrm){ delete D.rendaMes[t.dataset.delrm]; renderEditor(); mudou(); }
 });
@@ -186,7 +222,7 @@ function tipoQA(){
 $("qaTipo").onchange = tipoQA;
 $("qaForm").addEventListener("submit", e=>{
   e.preventDefault();
-  const tipo = $("qaTipo").value, nome = $("qaNome").value.trim(), valor = +$("qaValor").value;
+  const tipo = $("qaTipo").value, nome = $("qaNome").value.trim(), valor = parseBRL($("qaValor").value);
   const ini = $("qaIni").value, fim = $("qaFim").value, msg = $("qaMsg");
   msg.style.color = "var(--warn)";
   if (!(valor > 0)) { msg.textContent = "Informe um valor maior que zero."; return; }

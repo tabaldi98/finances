@@ -110,6 +110,7 @@ body { margin: 0; }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--bg); }
 .btn.danger { color: var(--warn); border-color: var(--warn); }
 .btn:hover { border-color: var(--accent); }
+.wrap > *, .ed-body > *, #plan > * { min-width: 0; }
 details.editor { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
 details.editor > summary { cursor: pointer; padding: 14px 16px; font-family: var(--display); font-weight: 600; }
 .ed-body { padding: 0 16px 16px; display: grid; gap: 20px; }
@@ -126,8 +127,10 @@ details.editor > summary { cursor: pointer; padding: 14px 16px; font-family: var
 .qa { display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; align-items: end; }
 .qa .field select { font: inherit; font-size: 0.9rem; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); }
 .msg { font-size: 0.85rem; color: var(--good); min-height: 1.2em; }
-.renda-in { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 0.85rem; width: 7.5em; text-align: right; padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); }
+.renda-in { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 0.85rem; width: 9.5em; text-align: right; padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); }
 .renda-in.extra { border-color: var(--accent); background: var(--accent-soft); font-weight: 500; }
+.sort { font: inherit; font-weight: 600; font-size: 0.78rem; color: var(--ink-2); background: none; border: 0; padding: 2px 0; cursor: pointer; white-space: nowrap; }
+.sort:hover, .sort.on { color: var(--accent); }
 .badge { font-family: var(--mono); font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
 </style>
 </head>
@@ -156,7 +159,7 @@ details.editor > summary { cursor: pointer; padding: 14px 16px; font-family: var
         <select id="qaTipo"><option value="parcela">Parcelada</option><option value="fixo">Fixa (todo mês)</option><option value="renda">Renda diferente em um mês</option></select></label>
       <label class="field" data-np>Descrição<input id="qaNome" required placeholder="Ex.: Celular"></label>
       <label class="field" data-p>Cartão<input id="qaCartao" placeholder="Ex.: Nubank"></label>
-      <label class="field"><span id="qaValorLbl">Valor por mês (R$)</span><input id="qaValor" type="number" step="0.01" min="0" required placeholder="100,00"></label>
+      <label class="field"><span id="qaValorLbl">Valor por mês (R$)</span><input id="qaValor" class="money" type="text" inputmode="decimal" required placeholder="R$ 100,00"></label>
       <label class="field" data-p data-r><span id="qaIniLbl">Primeira parcela</span><input id="qaIni" type="month"></label>
       <label class="field" data-p>Última parcela<input id="qaFim" type="month"></label>
       <button class="btn primary" type="submit">Adicionar</button>
@@ -168,7 +171,7 @@ details.editor > summary { cursor: pointer; padding: 14px 16px; font-family: var
     <summary>Editar todos os dados</summary>
     <div class="ed-body">
       <div class="ed-grid">
-        <label class="field">Renda líquida mensal (R$)<input type="number" step="0.01" min="0" id="inRenda"></label>
+        <label class="field">Renda líquida mensal (R$)<input class="money" type="text" inputmode="decimal" id="inRenda" placeholder="R$ 0,00"></label>
         <label class="field">Primeiro mês da projeção<input type="month" id="inInicio"></label>
       </div>
       <div>
@@ -217,7 +220,7 @@ details.editor > summary { cursor: pointer; padding: 14px 16px; font-family: var
   <section>
     <div class="head">
       <h2>Quando cada parcela acaba</h2>
-      <p class="note">Saldo ainda a pagar: <b class="num" id="saldoDev"></b>. O quadrado mais escuro é a última parcela.</p>
+      <p class="note">Saldo ainda a pagar: <b class="num" id="saldoDev"></b>. O quadrado mais escuro é a última parcela. Clique no título de uma coluna para ordenar.</p>
     </div>
     <div class="scroll"><table class="gantt" id="gantt"></table></div>
   </section>
